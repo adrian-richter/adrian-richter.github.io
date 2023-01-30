@@ -860,13 +860,6 @@ footer img {
     transition: opacity .3s 0s, visibility 0s .3s;
 }
 
-button {
-    width: 8rem;
-    padding: 1.4rem;
-    cursor: pointer;
-    background:rgba(127, 219, 255, 0.8);
-    color: #fff;
-}
 
 .cd-top.cd-is-visible,
 .cd-top.cd-fade-out,

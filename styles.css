@@ -2,7 +2,7 @@
   --ink: #131313;
   --paper: #f4f2ec;
   --white: #fffdf8;
-  --acid: #c8ff38;
+  --acid: #00f08a;
   --blue: #63d2ff;
   --orange: #ff5b2f;
   --line: rgba(19, 19, 19, .22);
@@ -127,25 +127,18 @@ h2 { margin-bottom: 0; font-size: clamp(2.9rem, 6vw, 6.8rem); font-weight: 900; 
 .project-tall .project-meta p, .project-square .project-meta p { grid-column: 1 / -1; grid-row: 2; }
 .project-tall .project-number, .project-square .project-number { grid-column: 2; grid-row: 1; }
 
-.art-kack { position: relative; overflow: hidden; background: #c9b998; }
-.art-kack::before { position: absolute; inset: 9%; border: 2px solid var(--ink); content: ""; }
-.beam { position: absolute; top: -10%; width: 54px; height: 125%; background: var(--ink); }
-.beam-one { left: 27%; transform: rotate(32deg); }
-.beam-two { right: 27%; transform: rotate(-32deg); }
-.kack-word { position: absolute; z-index: 2; inset: 50% auto auto 50%; padding: 10px 16px; background: var(--acid); font-size: clamp(3.5rem, 9vw, 9rem); font-weight: 950; letter-spacing: -.07em; line-height: .8; transform: translate(-50%, -50%); }
-.craft-seal { position: absolute; z-index: 3; right: 8%; bottom: 9%; display: grid; width: 86px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: .64rem; font-weight: 800; line-height: 1.2; text-align: center; text-transform: uppercase; transform: rotate(8deg); }
+.logo-stage { position: relative; display: grid; overflow: hidden; margin: 0; padding: clamp(30px, 5vw, 72px); place-items: center; }
+.logo-stage img { position: relative; z-index: 1; display: block; width: min(78%, 760px); max-height: 340px; object-fit: contain; }
+.logo-stage-kaack { background: var(--acid); }
+.logo-stage-kaack::before { position: absolute; inset: 0; background: linear-gradient(135deg, transparent 49.8%, rgba(19, 19, 19, .2) 50%, transparent 50.2%); content: ""; }
+.logo-stage-kaack img { width: min(72%, 720px); box-shadow: 14px 14px 0 var(--ink); }
+.logo-stage-woodcraft { background: #d9c8a6; }
+.logo-stage-woodcraft img { width: min(82%, 430px); }
 .art-killer { position: relative; overflow: hidden; min-height: 590px; background: var(--orange); }
 .art-killer::before { position: absolute; inset: -30% -70%; border: 7vw solid var(--ink); border-radius: 50%; content: ""; }
 .killer-kicker { position: absolute; z-index: 2; top: 24px; left: 24px; padding: 6px 9px; background: var(--acid); font-size: .64rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; transform: rotate(-3deg); }
 .killer-word { position: absolute; z-index: 2; top: 50%; left: 50%; color: var(--white); font-size: clamp(4.3rem, 7vw, 8.4rem); font-weight: 950; letter-spacing: -.08em; line-height: .72; text-align: center; transform: translate(-50%, -50%) rotate(-6deg); }
 .killer-slice { position: absolute; z-index: 2; right: 22px; bottom: 20px; font-size: 1.1rem; font-weight: 900; }
-.art-woodcraft { position: relative; display: grid; min-height: 420px; place-items: center; overflow: hidden; background: #394837; color: #f1ddbc; }
-.wood-ring { position: absolute; border: 1px solid rgba(241, 221, 188, .5); border-radius: 47% 53% 42% 58%; }
-.ring-one { width: 82%; aspect-ratio: 1; transform: rotate(18deg); }
-.ring-two { width: 62%; aspect-ratio: 1; transform: rotate(-9deg); }
-.ring-three { width: 42%; aspect-ratio: 1; transform: rotate(31deg); }
-.wood-word { position: relative; z-index: 2; font-family: Georgia, serif; font-size: clamp(3.3rem, 6.2vw, 6.3rem); font-weight: 700; letter-spacing: -.06em; line-height: .72; text-align: center; }
-.art-woodcraft > span { position: absolute; z-index: 2; bottom: 34px; font-size: .68rem; font-weight: 800; letter-spacing: .36em; text-transform: uppercase; }
 .image-wrap { overflow: hidden; margin: 0; background: #ddd; }
 .image-wrap img { width: 100%; height: 100%; min-height: 400px; object-fit: cover; transition: transform .5s ease; }
 .project:hover .image-wrap img { transform: scale(1.035); }

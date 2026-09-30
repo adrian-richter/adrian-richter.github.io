@@ -171,7 +171,7 @@ h2 { margin-bottom: 0; font-size: clamp(2.9rem, 6vw, 6.8rem); font-weight: 900; 
 .profile-facts dd { margin: 0; font-weight: 650; }
 
 .contact { position: relative; overflow: hidden; border-top: 1px solid var(--ink); background: var(--acid); }
-.contact::after { position: absolute; top: -80px; right: -20px; color: rgba(19, 19, 19, .09); content: ""; width: 38vw; aspect-ratio: 1; background: url("assets/adrian-mark-v2.svg") center / contain no-repeat; opacity: .08; font-size: 33vw; font-weight: 950; letter-spacing: -.15em; line-height: 1; pointer-events: none; }
+.contact::after { position: absolute; top: -80px; right: -20px; color: rgba(19, 19, 19, .09); content: ""; width: 38vw; aspect-ratio: 1; background: url("assets/adrian-mark-v3.svg") center / contain no-repeat; opacity: .08; font-size: 33vw; font-weight: 950; letter-spacing: -.15em; line-height: 1; pointer-events: none; }
 .contact > * { position: relative; z-index: 1; }
 .contact h2 { max-width: 1150px; margin-bottom: clamp(60px, 10vw, 140px); }
 .contact-row { display: flex; gap: 24px 80px; flex-wrap: wrap; }
@@ -375,10 +375,10 @@ h2 { overflow-wrap: anywhere; }
 
 /* Compact navigation and truthful privacy notice. */
 .wordmark-mark {
-  padding: 5px;
-  border: 1px solid var(--ink);
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: var(--acid);
+  background: transparent;
 }
 .menu-toggle, .mobile-nav { display: none; }
 .menu-toggle {

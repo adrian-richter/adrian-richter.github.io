@@ -297,7 +297,7 @@ h2 { overflow-wrap: anywhere; }
 .logo-stage-smiddys img.project-logo { width: min(75%, 295px); max-height: 355px; filter: drop-shadow(0 5px 12px rgba(0,0,0,.38)); }
 .logo-stage-ehmke { background: #17261d; border-top: 0; }
 .logo-stage-ehmke::after { background: linear-gradient(90deg, rgba(14,38,25,.56), rgba(14,38,25,.16)); }
-.logo-stage-ehmke img.ehmke-logo { width: min(80%, 335px); max-height: 370px; filter: url(#ehmke-ivory); mix-blend-mode: normal; }
+.logo-stage-ehmke img.ehmke-logo { width: min(80%, 335px); max-height: 370px; filter: none; mix-blend-mode: normal; }
 .logo-stage-richter { background: #19150f; min-height: 460px; }
 .logo-stage-richter::after { background: rgba(15,12,8,.28); }
 .logo-stage-richter img.project-logo { width: min(80%, 660px); max-height: 290px; }

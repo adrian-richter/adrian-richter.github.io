@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/adrian-favicon-v2.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/adrian-favicon-v2-32.png">
   <link rel="apple-touch-icon" href="assets/adrian-touch-icon-v2.png">
-  <link rel="stylesheet" href="styles.css?v=20260930-8">
+  <link rel="stylesheet" href="styles.css?v=20260930-9">
   <link rel="canonical" href="https://adrian-richter.com/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
@@ -25,7 +25,7 @@
       "@type": "Organization",
       "@id": "https://adrian-richter.com/#organisation",
       "name": "AR.DESIGN – Adrian Richter",
-      "alternateName": "Adrian Richter Mediengestaltung",
+      "alternateName": "Adrian Richter Grafik, Web & Textil",
       "url": "https://adrian-richter.com/",
       "logo": "https://adrian-richter.com/assets/adrian-mark-v2.svg",
       "email": "info@adrian-richter.com",
@@ -209,14 +209,22 @@
       <a href="#profil">Profil</a>
     </nav>
     <a class="header-cta" href="mailto:info@adrian-richter.com?subject=Projektanfrage">Projekt anfragen</a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="mobile-nav" id="mobile-menu" aria-label="Mobile Navigation" hidden>
+      <a href="#projekte">Projekte</a>
+      <a href="#leistungen">Leistungen</a>
+      <a href="#profil">Profil</a>
+    </nav>
   </header>
 
   <main id="main">
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow">Webdesign &amp; Grafikdesign · Schleswig</p>
+        <p class="eyebrow">Grafik, Web &amp; Textil</p>
         <h1 id="hero-title">Marken, die<br><span>hängen bleiben.</span></h1>
-        <p class="hero-intro">Ich bin Adrian Richter, Mediengestalter aus Schleswig. Ich entwickle Websites, Logos und Printdesign für Unternehmen, Handwerk und Gastronomie — vom ersten Entwurf bis zum fertigen Auftritt.</p>
+        <p class="hero-intro">Willkommen bei AR.DESIGN. Ich bin Mediengestalter und entwickle Websites, Logos und Printdesign für Unternehmen, Handwerk und Gastronomie.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#projekte">Ausgewählte Projekte</a>
           <a class="text-link" href="mailto:info@adrian-richter.com?subject=Hallo%20Adrian">Hallo sagen <span aria-hidden="true">↗</span></a>
@@ -412,7 +420,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>Adrian Richter · Mediengestaltung</p>
+    <p>Adrian Richter · Grafik, Web &amp; Textil</p>
     <nav class="footer-links" aria-label="Rechtliche Hinweise">
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
@@ -420,6 +428,17 @@
     <a href="#top">Nach oben ↑</a>
   </footer>
 
-  <script src="script.js?v=20260930-3"></script>
+  <aside class="cookie-banner" id="cookie-banner" aria-label="Cookie-Hinweis" hidden>
+    <div>
+      <strong>Cookies? Nur das Nötigste.</strong>
+      <p>Diese Website verwendet keine Analyse- oder Marketing-Cookies. Eine lokale Einstellung merkt sich nur, dass du diesen Hinweis geschlossen hast.</p>
+    </div>
+    <div class="cookie-actions">
+      <a href="datenschutz.html">Datenschutz</a>
+      <button type="button" id="cookie-dismiss">Alles klar</button>
+    </div>
+  </aside>
+
+  <script src="script.js?v=20260930-4"></script>
 </body>
 </html>

@@ -448,7 +448,7 @@ h2 { overflow-wrap: anywhere; }
     line-height: .86;
     overflow-wrap: normal;
   }
-  #hero-title span { color: var(--acid); -webkit-text-stroke: 0; }
+  #hero-title span { color: transparent; -webkit-text-stroke: 2px var(--acid); }
   .hero-intro { max-width: 38rem; margin-bottom: 30px; font-size: .88rem; line-height: 1.5; }
   .legal-intro h1 { font-size: clamp(2.5rem, 11vw, 3.45rem); line-height: .92; overflow-wrap: normal; word-break: normal; }
   .cookie-banner { right: 12px; bottom: 12px; left: 12px; grid-template-columns: 1fr; gap: 16px; padding: 16px; box-shadow: 5px 5px 0 var(--ink); }

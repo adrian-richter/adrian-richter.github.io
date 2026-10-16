@@ -114,3 +114,9 @@ html { scroll-padding-top: 100px; }
 .hero-atmosphere span:nth-child(30) { left:79%;top:7%;animation-delay:-6.0s;animation-duration:5.5s; }
 .hero-atmosphere span:nth-child(31) { left:22%;top:30%;animation-delay:-7.7s;animation-duration:6.1s; }
 .hero-atmosphere span:nth-child(32) { left:59%;top:53%;animation-delay:-0.4s;animation-duration:6.7s; }
+
+
+/* Privacy update: spacious typography-led hero without personal imagery. */
+.human-hero { grid-template-columns:1fr; }
+.human-hero .hero-copy { width:min(100%,1200px); padding:clamp(65px,9vw,130px) clamp(24px,5vw,80px) 85px; }
+.human-hero .hero-intro { max-width:40rem; }

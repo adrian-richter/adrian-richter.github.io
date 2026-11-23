@@ -6,17 +6,55 @@ const DEFAULT_STOCK=[
   ['Eier','🥚','shared'],['Nudeln','🍝','shared'],['Brot','🍞','shared'],
   ['Käse','🧀','shared'],['Spüli','🧽','shared'],['Müllbeutel','🗑️','shared']
 ];
+// Vorschläge für den Putzclub – bestehende Nutzer-Einträge bleiben erhalten.
+const CHORE_CATALOG_VERSION=2;
+const CHORE_CATALOG=[
+ {name:'Bad schrubben',owner:'ben',cycle:7,offset:2},
+ {name:'Küche retten',owner:'adrian',cycle:7,offset:3},
+ {name:'Staubsaugen',owner:'ben',cycle:7,offset:4},
+ {name:'Müll rausbringen',owner:'adrian',cycle:4,offset:1},
+ {name:'Boden wischen',owner:'adrian',cycle:7,offset:5},
+ {name:'Toilette reinigen',owner:'ben',cycle:7,offset:6},
+ {name:'Dusche entkalken',owner:'adrian',cycle:14,offset:8},
+ {name:'Waschbecken putzen',owner:'ben',cycle:7,offset:5},
+ {name:'Spiegel putzen',owner:'adrian',cycle:14,offset:10},
+ {name:'Staub wischen',owner:'ben',cycle:7,offset:6},
+ {name:'Fenster putzen',owner:'adrian',cycle:30,offset:20},
+ {name:'Herd & Arbeitsfläche reinigen',owner:'ben',cycle:7,offset:7},
+ {name:'Kühlschrank reinigen',owner:'adrian',cycle:30,offset:23},
+ {name:'Pfand wegbringen',owner:'ben',cycle:14,offset:12},
+ {name:'Handtücher wechseln',owner:'adrian',cycle:7,offset:7},
+ {name:'Bettwäsche wechseln',owner:'ben',cycle:14,offset:14},
+ {name:'Spülmaschine ausräumen',owner:'adrian',cycle:2,offset:2}
+];
+const CHORE_IDEAS=[
+ {name:'Backofen reinigen',cycle:30},
+ {name:'Flur aufräumen',cycle:7},
+ {name:'Abflüsse reinigen',cycle:30},
+ {name:'Wäsche waschen',cycle:7},
+ {name:'Pflanzen gießen',cycle:7},
+ {name:'Mikrowelle reinigen',cycle:14},
+ {name:'Balkon fegen',cycle:14},
+ {name:'Geschirrtücher wechseln',cycle:7}
+];
+function newChore(p){return {id:uid(),name:p.name,emoji:choreEmoji(p.name),owner:p.owner||'ben',cycle:p.cycle||7,due:offsetDay(p.offset||1),history:[]}}
+function hydrateChoreCatalog(data){
+ if(Number(data.choreCatalogVersion||0)>=CHORE_CATALOG_VERSION)return false;
+ const normalized=value=>String(value||'').toLocaleLowerCase('de-DE').replace(/[^a-zäöüß0-9]/g,'');
+ // Nur NEUE Vorlagen hinzufügen. Bestehende Aufgaben und Historien unangetastet lassen.
+ for(const preset of CHORE_CATALOG.slice(4)){
+  if(!data.chores.some(x=>normalized(x.name)===normalized(preset.name)))data.chores.push(newChore(preset));
+ }
+ data.choreCatalogVersion=CHORE_CATALOG_VERSION;
+ return true;
+}
 const defaultState=()=>({
   version:1,
   shopping:[],
   pantry:DEFAULT_STOCK.map(([name,emoji,owner])=>({id:uid(),name,emoji,owner,status:'unknown',count:0,updated:''})),
   events:[],
-  chores:[
-    {id:uid(),name:'Bad schrubben',emoji:'🚽',owner:'ben',cycle:7,due:offsetDay(2),history:[]},
-    {id:uid(),name:'Küche retten',emoji:'🍽️',owner:'adrian',cycle:7,due:offsetDay(3),history:[]},
-    {id:uid(),name:'Staubsaugen',emoji:'🧹',owner:'ben',cycle:7,due:offsetDay(4),history:[]},
-    {id:uid(),name:'Müll rausbringen',emoji:'🗑️',owner:'adrian',cycle:4,due:offsetDay(1),history:[]}
-  ],
+  chores:CHORE_CATALOG.map(newChore),
+  choreCatalogVersion:CHORE_CATALOG_VERSION,
   receipts:[],
   meals:[]
 });
@@ -80,20 +118,23 @@ function ensureMandatoryBeer(){
 function meat(name){return /fleisch|steak|rind|schwein|hack|hähn|huhn|pute|schnitzel|speck|bacon|salami|wurst|schinken|frikadelle|leberkäs|bratwurst/i.test(name)}
 function safeState(input){
  if(!input||!Array.isArray(input.shopping)||!Array.isArray(input.pantry)||!Array.isArray(input.events)||!Array.isArray(input.chores)||!Array.isArray(input.receipts))throw Error('Keine gültige Töpferkurs-Sicherung');
- return {version:1,shopping:input.shopping.slice(0,1000),pantry:input.pantry.slice(0,1000),events:input.events.slice(0,1000),chores:input.chores.slice(0,1000),receipts:input.receipts.slice(0,1000),meals:Array.isArray(input.meals)?input.meals.slice(0,1000):[]};
+ return {version:1,shopping:input.shopping.slice(0,1000),pantry:input.pantry.slice(0,1000),events:input.events.slice(0,1000),chores:input.chores.slice(0,1000),choreCatalogVersion:Number(input.choreCatalogVersion)||0,receipts:input.receipts.slice(0,1000),meals:Array.isArray(input.meals)?input.meals.slice(0,1000):[]};
 }
 function load(){
  try{const raw=localStorage.getItem(KEY);return raw?safeState(JSON.parse(raw)):defaultState()}
  catch(e){console.warn('Speicher nicht verfügbar:',e);return defaultState()}
 }
 let state=load();
+const upgradedChores=hydrateChoreCatalog(state);
 ensureMandatoryBeer();
+if(upgradedChores){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){console.warn('Putzclub-Upgrade konnte nicht gespeichert werden:',e)}}
 let ui={page:'home',shopTab:'all',quiz:-1,quizAdded:0,month:new Date().getMonth(),year:new Date().getFullYear(),chosenDate:dayISO(),stockFilter:'all',modal:'',receiptText:''};
 const main=document.getElementById('main');
 const modal=document.getElementById('modal');
 const toastEl=document.getElementById('toast');
 let toastTimer;
 function save(){
+ hydrateChoreCatalog(state);
  ensureMandatoryBeer();
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('⚠️ Speicher voll oder blockiert. Bitte Backup exportieren.');console.error(e)}
  updateNav();
@@ -227,18 +268,81 @@ function calendarPage(){
  <section class="section card"><div class="card-head"><div><h2>🔮 Was demnächst geht</h2><p class="muted small">Chronologisch, ohne Diskussionen.</p></div></div>
  ${future.length?future.map(x=>eventRow(x)).join(''):empty('🍻','Die Zukunft ist noch frei','Legt Termine an, bevor Ben spontan einen 12-Stunden-Rave plant.')}</section>`;
 }
-function choresPage(){
- const sorted=state.chores.slice().sort((a,b)=>a.due.localeCompare(b.due));
- const history=state.chores.flatMap(x=>(x.history||[]).map(h=>({...h,name:x.name,emoji:x.emoji}))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
- return pageIntro('🧽 WER HAT DAS BAD VERSAUT?','DER PUTZCLUB.','Faire Verteilung ohne passiv-aggressive Zettel an der Kühlschranktür.',button('open-chore','➕ Putzjob hinzufügen'))+
- `<div class="grid cols-2"><div class="card shadow"><h2>🧹 Wer ist dran?</h2><p class="muted small">Erledigen drücken → Aufgabe wird neu terminiert und wandert zum anderen.</p>
- <div class="list">${sorted.map(x=>{
+// Matching applies to existing tasks, new tasks and the completed-work history.
+function choreEmoji(name){
+ const n=String(name||'').toLocaleLowerCase('de-DE');
+ const patterns=[
+ [/staubsaug|sauger/,'🧹'],
+ [/boden.?wisch|wischmopp|feucht.?wisch|fußboden|fussboden/,'🧼'],
+ [/spülmaschine|geschirrspüler/,'🍽️'],
+ [/waschmaschine|wäsche wasch|wäschekorb/,'🧺'],
+ [/waschbecken|lavabo/,'🚰'],
+ [/kühlschrank|gefrierfach/,'🧊'],
+ [/backofen|ofen reinigen/,'♨️'],
+ [/mikrowelle/,'🍲'],
+ [/dunstabzug/,'🌬️'],
+ [/toilette|klo|wc.?reinigen/,'🚽'],
+ [/dusche|duschkabine/,'🚿'],
+ [/bad|badezimmer/,'🛁'],
+ [/spiegel/,'🪞'],
+ [/fenster|scheibe/,'🪟'],
+ [/staub.?wisch|staub.?putz|oberflächen/,'🪶'],
+ [/herd|kochfeld|arbeitsplatte|küche|geschirr/,'🍳'],
+ [/pfand|leergut|flaschen weg/,'🍾'],
+ [/müll|papiermüll|gelber sack/,'🗑️'],
+ [/handtuch|geschirrtuch/,'🧺'],
+ [/bettwäsche|bett beziehen/,'🛏️'],
+ [/abfluss/,'🚰'],
+ [/wäsche|waschen|bügeln/,'🧺'],
+ [/pflanze|blume/,'🪴'],
+ [/balkon|terrasse|fegen|kehren/,'🧹'],
+ [/flur|eingang|schuhe/,'🚪'],
+ [/putzen|reinigen|schrubben/,'🧽']
+ ];
+ for(const [pattern,emoji] of patterns)if(pattern.test(n))return emoji;
+ return '🧽';
+}
+function choreIcon(name,fallback=''){
+ const n=String(name||'').toLocaleLowerCase('de-DE');
+ if(/staubsaug|sauger/.test(n)){
+  return '<svg class="chore-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Staubsauger">'+
+   '<path d="M37 18Q34 5 25 8Q15 9 17 21" fill="none" stroke="#171a26" stroke-width="4" stroke-linecap="round"/>'+
+   '<path d="M17 19C4 24 8 38 14 44" fill="none" stroke="#171a26" stroke-width="4" stroke-linecap="round"/>'+
+   '<rect x="20" y="26" width="30" height="22" rx="9" fill="#98cbff" stroke="#171a26" stroke-width="4"/>'+
+   '<path d="M24 29Q39 22 47 33" fill="none" stroke="#fffdf8" stroke-width="3" stroke-linecap="round"/>'+
+   '<circle cx="29" cy="48" r="6" fill="#171a26"/><circle cx="45" cy="48" r="6" fill="#171a26"/>'+
+   '<path d="M8 39L5 49L16 51" fill="none" stroke="#171a26" stroke-width="4" stroke-linecap="round"/>'+
+   '</svg>';
+ }
+ if(/boden.?wisch|wischmopp|feucht.?wisch|fußboden|fussboden/.test(n)){
+  return '<svg class="chore-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Wischmopp">'+
+   '<path d="M44 7L29 44" stroke="#171a26" stroke-width="5" stroke-linecap="round"/>'+
+   '<path d="M45 7L30 44" stroke="#d6ff67" stroke-width="2.2" stroke-linecap="round"/>'+
+   '<path d="M16 42Q32 47 47 42L48 51Q31 56 15 51Z" fill="#98cbff" stroke="#171a26" stroke-width="3" stroke-linejoin="round"/>'+
+   '<path d="M20 52L18 58M27 53L26 60M35 53L36 60M43 52L46 58" stroke="#171a26" stroke-width="3" stroke-linecap="round"/>'+
+   '<path d="M8 36L11 31L14 36L11 39Z" fill="#d6ff67" stroke="#171a26" stroke-width="1.7"/>'+
+   '</svg>';
+ }
+ const guessed=choreEmoji(name);
+ return esc(guessed==='🧽'&&fallback?fallback:guessed);
+}
+function choreRow(x){
  const overdue=x.due<dayISO(),today=x.due===dayISO();
- return '<div class="list-row"><span class="list-icon">'+esc(x.emoji||'🧹')+'</span><div class="list-main"><div class="item-name">'+esc(x.name)+'</div><div class="item-sub">'+(overdue?'🚨 Überfällig · ':today?'📣 Heute · ':'📆 '+dateLabel(x.due)+' · ')+'alle '+Number(x.cycle||7)+' Tage</div></div>'+ownerTag(x.owner)+'<button class="btn tiny" data-action="do-chore" data-id="'+attr(x.id)+'">✅</button><button class="icon-btn" data-action="delete-chore" data-id="'+attr(x.id)+'" aria-label="Entfernen">✕</button></div>';
- }).join('')||empty('🫧','Alles blitzblank','Noch keine Putzaufgaben angelegt.')}</div></div>
- <div class="card"><h2>🏆 Die Ruhmeshalle</h2><p class="muted small">Wer war zuletzt der Held mit dem Wischmopp?</p>
- ${history.length?history.map(h=>'<div class="summary-mini"><span class="emoji">'+esc(h.emoji||'🧹')+'</span><div style="flex:1"><b>'+esc(h.name)+'</b><small>'+ownerName(h.by)+' · '+dateLabel(h.date)+'</small></div><span>🏅</span></div>').join(''):empty('🛋️','Noch keine Heldentaten','Hier landen eure erledigten Putzjobs.')}
- <div class="panel-note" style="margin-top:17px">⚖️ <strong>WG-Vertrag, Artikel 1:</strong> Wer die letzte Klopapierrolle nimmt, meldet sie im Vorratsregal. Mit sofortiger Wirkung.</div></div></div>`;
+ return '<div class="list-row chore-row"><span class="list-icon chore-illustration">'+choreIcon(x.name,x.emoji)+'</span><div class="list-main"><div class="item-name">'+esc(x.name)+'</div><div class="item-sub">'+(overdue?'🚨 Überfällig · ':today?'📣 Heute · ':'📆 '+dateLabel(x.due)+' · ')+'alle '+Number(x.cycle||7)+' Tage</div></div><div class="chore-row-actions">'+ownerTag(x.owner)+'<button class="btn tiny" data-action="do-chore" data-id="'+attr(x.id)+'" aria-label="'+attr(x.name)+' erledigen">✅ Fertig</button><button class="icon-btn" data-action="delete-chore" data-id="'+attr(x.id)+'" aria-label="'+attr(x.name)+' entfernen">✕</button></div></div>';
+}
+function choresPage(){
+ const sorted=state.chores.slice().sort((a,b)=>String(a.due||'').localeCompare(String(b.due||'')));
+ const soon=sorted.filter(x=>x.due<=offsetDay(7));
+ const later=sorted.filter(x=>x.due>offsetDay(7));
+ const history=state.chores.flatMap(x=>(x.history||[]).map(h=>({...h,name:x.name,emoji:x.emoji}))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+ return pageIntro('🧽 WER HAT DAS BAD VERSAUT?','DER PUTZCLUB.','17 klassische WG-Pflichten, eigene Symbole und eine gerechte Wechsel-Rotation. Keine Ausreden mehr. 😎',button('open-chore','➕ Putzjob hinzufügen'))+
+ '<div class="chore-pulse"><span>🧹 '+sorted.length+' Aufgaben im Plan</span><span>🚨 '+sorted.filter(x=>x.due<=dayISO()).length+' heute oder überfällig</span><span>🤝 Ben & Adrian wechseln sich ab</span></div>'+
+ '<div class="grid cols-2"><div class="card shadow"><h2>⚡ Jetzt & bald dran</h2><p class="muted small">Die nächsten sieben Tage. Erledigen → neues Datum und der andere ist dran.</p>'+
+ '<div class="list">'+(soon.length?soon.map(choreRow).join(''):empty('🎉','Alles glänzt!','In den nächsten sieben Tagen ist nichts fällig.'))+'</div>'+
+ (later.length?'<div class="chore-later"><h3>📆 Später dran</h3><div class="list">'+later.map(choreRow).join('')+'</div></div>':'')+'</div>'+
+ '<div class="card"><div class="card-head"><div><h2>🏆 Die Ruhmeshalle</h2><p class="muted small">Wer war zuletzt der Held mit dem Wischmopp?</p></div><span class="card-emoji">🧽</span></div>'+
+ (history.length?history.map(h=>'<div class="summary-mini"><span class="emoji chore-history-icon">'+choreIcon(h.name,h.emoji)+'</span><div style="flex:1"><b>'+esc(h.name)+'</b><small>'+ownerName(h.by)+' · '+dateLabel(h.date)+'</small></div><span>🏅</span></div>').join(''):empty('🛋️','Noch keine Heldentaten','Hier landen eure erledigten Putzjobs.'))+
+ '<div class="panel-note" style="margin-top:17px">⚖️ <strong>WG-Vertrag, Artikel 1:</strong> Wer die letzte Klopapierrolle nimmt, meldet sie im Vorratsregal. Mit sofortiger Wirkung.</div></div></div>';
 }
 function splitBalance(){
  let paidBen=0,paidAdrian=0,owedBen=0,owedAdrian=0;
@@ -302,12 +406,14 @@ function openMeal(){
  <div class="btn-row"><button type="submit" class="btn">🍽️ VERPUTZT, EINTRAGEN!</button></div></form>`);
 }
 function openChore(){
- modalOpen(modalHead('🧹 PUTZCLUB','NEUER PUTZJOB','Saubermachen, bevor die WG eine eigene Lebensform entwickelt.')+
- `<form data-form="add-chore"><div class="form-grid"><div class="field full"><label>Was muss gemacht werden?</label><input name="name" maxlength="90" placeholder="z.B. Herd entfetten" required></div>
- <div class="field"><label>Wer fängt an?</label><select name="owner"><option value="ben">🥩 Ben</option><option value="adrian">🎨 Adrian</option></select></div>
- <div class="field"><label>Alle wie viele Tage?</label><input name="cycle" type="number" min="1" max="365" value="7" required></div>
- <div class="field full"><label>Nächste Fälligkeit</label><input name="due" type="date" value="${offsetDay(1)}" required></div></div>
- <div class="btn-row"><button type="submit" class="btn">🧽 IN DEN PUTZPLAN</button></div></form>`);
+ modalOpen(modalHead('🧹 PUTZCLUB','NEUER PUTZJOB','Selbst etwas eintragen oder einen Vorschlag antippen.')+
+ '<form data-form="add-chore"><div class="form-grid">'+
+ '<div class="field full"><label>💡 Noch mehr Aufgaben-Ideen</label><div class="chore-ideas">'+CHORE_IDEAS.filter(x=>!state.chores.some(y=>y.name.toLocaleLowerCase('de-DE')===x.name.toLocaleLowerCase('de-DE'))).map(p=>'<button type="button" class="chore-idea" data-action="chore-idea" data-name="'+attr(p.name)+'" data-cycle="'+p.cycle+'"><span class="chore-idea-icon">'+choreIcon(p.name)+'</span>'+esc(p.name)+'</button>').join('')+'</div></div>'+
+ '<div class="field full"><label for="chore-name">Was muss gemacht werden?</label><input id="chore-name" name="name" maxlength="90" placeholder="z.B. Herd entfetten" required></div>'+
+ '<div class="field"><label>Wer fängt an?</label><select name="owner"><option value="ben">🥩 Ben</option><option value="adrian">🎨 Adrian</option></select></div>'+
+ '<div class="field"><label for="chore-cycle">Alle wie viele Tage?</label><input id="chore-cycle" name="cycle" type="number" min="1" max="365" value="7" required></div>'+
+ '<div class="field full"><label>Nächste Fälligkeit</label><input name="due" type="date" value="'+offsetDay(1)+'" required></div></div>'+
+ '<div class="btn-row"><button type="submit" class="btn">🧽 IN DEN PUTZPLAN</button></div></form>');
 }
 function openReceipt(fromCheckout=false){
  const checked=fromCheckout?state.shopping.filter(x=>x.done):[];
@@ -419,6 +525,7 @@ function handleAction(action,el){
  if(action==='open-stock'){openStock();return}
  if(action==='open-meal'){openMeal();return}
  if(action==='open-chore'){openChore();return}
+ if(action==='chore-idea'){const nameInput=document.getElementById('chore-name'),cycleInput=document.getElementById('chore-cycle');if(nameInput&&cycleInput){nameInput.value=el.dataset.name||'';cycleInput.value=el.dataset.cycle||'7';nameInput.focus()}return}
  if(action==='open-receipt'){openReceipt(false);return}
  if(action==='start-quiz'){startQuiz();return}
  if(action==='quiz-answer'){quizAnswer(val);return}
@@ -502,7 +609,8 @@ document.body.addEventListener('submit',e=>{
  }
  if(type==='add-chore'){
   const name=String(data.name||'').trim();if(!name)return;
-  state.chores.push({id:uid(),name,emoji:/bad|klo|wc/i.test(name)?'🚽':/müll/i.test(name)?'🗑️':/küche|geschirr/i.test(name)?'🍽️':'🧹',owner:data.owner,due:data.due,cycle:Math.max(1,Number(data.cycle)||7),history:[]});
+  if(state.chores.some(x=>String(x.name).trim().toLocaleLowerCase('de-DE')===name.toLocaleLowerCase('de-DE'))){toast('🧽 Die Aufgabe ist schon im Putzplan.');return}
+  state.chores.push({id:uid(),name,emoji:choreEmoji(name),owner:data.owner,due:data.due,cycle:Math.max(1,Number(data.cycle)||7),history:[]});
   save();closeModal();render();toast('🧹 Ab in den Putzplan!');return;
  }
  if(type==='add-receipt'){

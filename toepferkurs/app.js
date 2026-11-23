@@ -148,7 +148,7 @@ function pantryPage(){
  <section class="section"><div class="tabs">${[['all','🥫 Alles'],['low','🚨 Fast leer'],['shared','🤝 WG'],['ben','🥩 Ben'],['adrian','🎨 Adrian']].map(([id,label])=>'<button class="tab '+(ui.stockFilter===id?'active':'')+'" data-action="stock-filter" data-value="'+id+'">'+label+'</button>').join('')}</div>
  <div class="category-grid">${filtered.length?filtered.map(x=>{
  const statusLabel={good:'✅ Genug da',low:'⚠️ Wenig',empty:'❌ Leer',unknown:'❔ Ungeprüft'}[x.status]||'❔ Ungeprüft';
- return '<div class="category-card"><div class="em">'+esc(x.emoji||stockEmoji(x.name))+'</div><div class="content"><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><strong>'+esc(x.name)+'</strong>'+ownerTag(x.owner)+'</div><small>'+statusLabel+' · '+(Number(x.count)||0)+' Einheit(en)</small><div class="status-buttons"><button class="'+(x.status==='good'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="good">👍 Genug</button><button class="'+(x.status==='low'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="low">😬 Wenig</button><button class="'+(x.status==='empty'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="empty">🚨 Leer</button><button data-action="consume" data-id="'+attr(x.id)+'" title="Eine Einheit verbraucht">➖ 1</button></div></div><button class="icon-btn" data-action="delete-stock" data-id="'+attr(x.id)+'" aria-label="Produkt entfernen">✕</button></div>';
+ return '<div class="category-card"><div class="em">'+esc(x.emoji||stockEmoji(x.name))+'</div><div class="content"><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><strong>'+esc(x.name)+'</strong>'+ownerTag(x.owner)+'</div><small>'+statusLabel+' · '+(Number(x.count)||0)+' Einheit(en)</small><div class="status-buttons"><button class="'+(x.status==='good'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="good">👍 Genug</button><button class="'+(x.status==='low'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="low">😬 Wenig</button><button class="'+(x.status==='empty'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="empty">🚨 Leer</button><button data-action="consume" data-id="'+attr(x.id)+'" title="Eine Einheit verbraucht">➖ 1</button><button data-action="add-unit" data-id="'+attr(x.id)+'" title="Eine Einheit ergänzt">➕ 1</button></div></div><button class="icon-btn" data-action="delete-stock" data-id="'+attr(x.id)+'" aria-label="Produkt entfernen">✕</button></div>';
  }).join(''):empty('🥫','Kein Produkt hier','Leg einfach ein neues an.')}</div></section>
  <section class="section meme-box"><span class="big">🍳</span><div><strong>Geplündert? Einmal auf „➖ 1“.</strong><div class="small">Bei null rutscht das Produkt automatisch auf den Einkaufszettel. Einfache Mengenführung für den Kühlschrank am Tablet.</div></div></section>`;
 }
@@ -337,7 +337,7 @@ function detectReceipt(raw){
   }
  }
  if(total===null&&amounts.length)total=Math.max(...amounts);
- const items=lines.filter(x=>/(\d{1,5}[,.]\d{2})/.test(x)&&!/(gesamt|summe|betrag|total|steuer|mwst|ust|netto|brutto|bezahlt|gegeben|rückgeld|ec-karte|mastercard|visa|kreditkarte|barzahlung)/i.test(x))
+ const items=lines.filter(x=>/(\d{1,5}[,.]\d{2})/.test(x)&&!/(gesamt|summe|betrag|total|steuer|mwst|ust|netto|brutto|bezahlt|gegeben|rückgeld|ec-karte|karte|mastercard|visa|kreditkarte|barzahlung|girocard|debit|zahlung)/i.test(x))
  .map(x=>x.replace(/\s+\d{1,5}[,.]\d{2}\s*(?:€|EUR)?\s*$/i,'').trim()).filter(x=>x.length>1).slice(0,70);
  return {total,items};
 }
@@ -366,6 +366,7 @@ function handleAction(action,el){
  if(action==='toggle-shopping'){const x=state.shopping.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}return}
  if(action==='delete-shopping'){state.shopping=state.shopping.filter(x=>x.id!==id);save();render();return}
  if(action==='stock-status'){const x=state.pantry.find(x=>x.id===id);if(x){setStockStatus(x,val);save();render();toast(val==='good'?'👍 Bestens, ist noch da!':'🛒 Bei Bedarf auf dem Einkaufszettel!')}return}
+ if(action==='add-unit'){const x=state.pantry.find(x=>x.id===id);if(!x)return;x.count=(Number(x.count)||0)+1;x.status='good';x.updated=dayISO();save();render();toast('📦 Eine Einheit ergänzt!');return}
  if(action==='consume'){
   const x=state.pantry.find(x=>x.id===id);if(!x)return;
   x.count=Math.max(0,(Number(x.count)||0)-1);

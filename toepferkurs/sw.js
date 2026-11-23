@@ -1,5 +1,5 @@
-const CACHE='toepferkurs-wg-v2';
-const CORE=['./','./index.html','./style.css?v=1','./app.js?v=1','./icon.svg','./manifest.webmanifest'];
+const CACHE='toepferkurs-wg-v3';
+const CORE=['./','./index.html','./style.css?v=2','./app.js?v=2','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });

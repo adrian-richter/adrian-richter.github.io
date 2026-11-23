@@ -198,7 +198,7 @@ function splitBalance(){
  for(const x of state.receipts){
   const total=Number(x.total)||0;
   if(x.payer==='ben')paidBen+=total;else paidAdrian+=total;
-  if(x.scope==='ben')owedBen+=total;else if(x.scope==='adrian')owedAdrian+=total;else{owedBen+=total/2;owedAdrian+=total/2}
+  if(x.scope==='ben')owedBen+=total;else if(x.scope==='adrian')owedAdrian+=total;else{const onlyBen=Math.max(0,Number(x.benExtra)||0),onlyAdrian=Math.max(0,Number(x.adrianExtra)||0);const shared=Math.max(0,total-onlyBen-onlyAdrian);owedBen+=onlyBen+shared/2;owedAdrian+=onlyAdrian+shared/2}
  }
  return {paidBen,paidAdrian,owedBen,owedAdrian,netAdrian:paidAdrian-owedAdrian};
 }
@@ -274,6 +274,9 @@ function openReceipt(fromCheckout=false){
  <div class="field"><label>Datum</label><input name="date" type="date" value="${dayISO()}" required></div>
  <div class="field"><label>Wer hat bezahlt?</label><select name="payer"><option value="adrian">🎨 Adrian</option><option value="ben">🥩 Ben</option></select></div>
  <div class="field"><label>Wem wird's angerechnet?</label><select name="scope"><option value="shared">🤝 50/50 WG</option><option value="ben">🥩 Nur Ben</option><option value="adrian">🎨 Nur Adrian</option></select></div>
+ <div class="field"><label>🥩 Davon nur Ben (€)</label><input name="benExtra" inputmode="decimal" value="0" placeholder="z.B. Fleisch: 6,99"></div>
+ <div class="field"><label>🎨 Davon nur Adrian (€)</label><input name="adrianExtra" inputmode="decimal" value="0" placeholder="z.B. eigener Kram: 3,99"></div>
+ <div class="field full"><div class="field-hint">Bei 50/50-Einkäufen werden persönliche Extras erst abgezogen. Den Rest teilt ihr fair.</div></div>
  <div class="field full"><label>Gekaufte Produkte (eine Zeile pro Produkt)</label><textarea id="receipt-items" name="items" placeholder="Gurken\nMilch\nKaffee">${esc(items)}</textarea></div>
  <div class="field full"><label>Optional: abgetippten Belegtext auswerten</label><textarea id="receipt-raw" name="raw" placeholder="Hier Kassenzetteltext einfügen, die App sucht eine Endsumme und Produktzeilen."></textarea><button class="btn tiny secondary" type="button" data-action="parse-receipt">🔎 Text auswerten</button></div></div>
  <div class="receipt-help">💡 <strong>Hinweis:</strong> Ein fotografierter Beleg wird nicht in der Datenbank gespeichert – es gibt bisher keine gemeinsame Server-Datenbank. Hier wird nur dein bestätigter Betrag und die Produktliste gespeichert.</div>
@@ -283,7 +286,7 @@ function openBackup(){
  modalOpen(modalHead('💾 DATEN SICHERN','WG-ÜBERLEBENSKIT','Diese erste Version speichert Daten nur auf deinem Gerät. Mit Export und Import könnt ihr Daten manuell übertragen.')+
  `<div class="notice"><span>⚠️</span><div><strong>Keine Live-Synchronisierung:</strong> Eintrag auf Adrians Handy erscheint noch nicht automatisch bei Ben. Für echte gemeinsame Daten braucht es später ein Backend mit Zugangsschutz.</div></div>
  <div class="btn-row">${button('export-backup','⬇️ JSON-Backup','secondary')}${button('import-backup','⬆️ Backup importieren','pink')}</div>
- <p class="small muted" style="margin-top:19px">Ein Backup enthält Einkaufsliste, Vorräte, Termine, Putzplan und Ausgaben. Import ersetzt die vorhandenen Daten auf diesem Gerät. Bitte vertraulich behandeln.</p>`);
+ <p class="small muted" style="margin-top:19px">Ein Backup enthält Einkaufsliste, Vorräte, Mahlzeiten, Termine, Putzplan und Ausgaben. Import ersetzt die vorhandenen Daten auf diesem Gerät. Bitte vertraulich behandeln.</p>`);
 }
 function openAbout(){
  modalOpen(modalHead('🏺 ÜBER UNSERE WG-ZENTRALE','TÖPFERKURS.','Ben + Adrian · Töpferstraße · Schleswig')+
@@ -457,8 +460,10 @@ document.body.addEventListener('submit',e=>{
  }
  if(type==='add-receipt'){
   const total=num(data.total);if(!Number.isFinite(total)||total<0||total>99999){toast('💸 Bitte einen gültigen Betrag eintragen.');return}
+  const benExtra=num(data.benExtra||'0'),adrianExtra=num(data.adrianExtra||'0');
+  if(![benExtra,adrianExtra].every(x=>Number.isFinite(x)&&x>=0)||data.scope==='shared'&&benExtra+adrianExtra>total+.005){toast('🧮 Persönliche Extras dürfen die Gesamtsumme nicht übersteigen.');return}
   const lines=String(data.items||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  state.receipts.push({id:uid(),store:String(data.store||'Einkauf').trim().slice(0,100),date:data.date||dayISO(),total:Math.round(total*100)/100,payer:data.payer,scope:data.scope,items:lines.join(', ').slice(0,3000)});
+  state.receipts.push({id:uid(),store:String(data.store||'Einkauf').trim().slice(0,100),date:data.date||dayISO(),total:Math.round(total*100)/100,payer:data.payer,scope:data.scope,benExtra:data.scope==='shared'?Math.round(benExtra*100)/100:0,adrianExtra:data.scope==='shared'?Math.round(adrianExtra*100)/100:0,items:lines.join(', ').slice(0,3000)});
   const checked=state.shopping.filter(x=>x.done);
   if(checked.length){
    restock(checked);state.shopping=state.shopping.filter(x=>!x.done);

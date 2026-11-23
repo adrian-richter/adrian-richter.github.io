@@ -290,7 +290,7 @@ function choreEmoji(name){
  [/herd|kochfeld|arbeitsplatte|küche|geschirr/,'🍳'],
  [/pfand|leergut|flaschen weg/,'🍾'],
  [/müll|papiermüll|gelber sack/,'🗑️'],
- [/handtuch|geschirrtuch/,'🧺'],
+ [/handt(?:uch|üch|uech)|geschirrt(?:uch|üch|uech)/,'🧺'],
  [/bettwäsche|bett beziehen/,'🛏️'],
  [/abfluss/,'🚰'],
  [/wäsche|waschen|bügeln/,'🧺'],
@@ -335,7 +335,7 @@ function choresPage(){
  const soon=sorted.filter(x=>x.due<=offsetDay(7));
  const later=sorted.filter(x=>x.due>offsetDay(7));
  const history=state.chores.flatMap(x=>(x.history||[]).map(h=>({...h,name:x.name,emoji:x.emoji}))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
- return pageIntro('🧽 WER HAT DAS BAD VERSAUT?','DER PUTZCLUB.','17 klassische WG-Pflichten, eigene Symbole und eine gerechte Wechsel-Rotation. Keine Ausreden mehr. 😎',button('open-chore','➕ Putzjob hinzufügen'))+
+ return pageIntro('🧽 WER HAT DAS BAD VERSAUT?','DER PUTZCLUB.','WG-Pflichten mit eigenen Symbolen und gerechter Wechsel-Rotation. Keine Ausreden mehr. 😎',button('open-chore','➕ Putzjob hinzufügen'))+
  '<div class="chore-pulse"><span>🧹 '+sorted.length+' Aufgaben im Plan</span><span>🚨 '+sorted.filter(x=>x.due<=dayISO()).length+' heute oder überfällig</span><span>🤝 Ben & Adrian wechseln sich ab</span></div>'+
  '<div class="grid cols-2"><div class="card shadow"><h2>⚡ Jetzt & bald dran</h2><p class="muted small">Die nächsten sieben Tage. Erledigen → neues Datum und der andere ist dran.</p>'+
  '<div class="list">'+(soon.length?soon.map(choreRow).join(''):empty('🎉','Alles glänzt!','In den nächsten sieben Tagen ist nichts fällig.'))+'</div>'+

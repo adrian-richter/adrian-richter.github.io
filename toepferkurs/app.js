@@ -17,7 +17,8 @@ const defaultState=()=>({
     {id:uid(),name:'Staubsaugen',emoji:'🧹',owner:'ben',cycle:7,due:offsetDay(4),history:[]},
     {id:uid(),name:'Müll rausbringen',emoji:'🗑️',owner:'adrian',cycle:4,due:offsetDay(1),history:[]}
   ],
-  receipts:[]
+  receipts:[],
+  meals:[]
 });
 function uid(){return 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
 function pad(n){return String(n).padStart(2,'0')}
@@ -35,7 +36,7 @@ function stockEmoji(name){const n=String(name).toLowerCase();for(const [part,e] 
 function meat(name){return /fleisch|steak|rind|schwein|hack|hähn|huhn|pute|schnitzel|speck|bacon|salami|wurst|schinken|frikadelle|leberkäs|bratwurst/i.test(name)}
 function safeState(input){
  if(!input||!Array.isArray(input.shopping)||!Array.isArray(input.pantry)||!Array.isArray(input.events)||!Array.isArray(input.chores)||!Array.isArray(input.receipts))throw Error('Keine gültige Töpferkurs-Sicherung');
- return {version:1,shopping:input.shopping.slice(0,1000),pantry:input.pantry.slice(0,1000),events:input.events.slice(0,1000),chores:input.chores.slice(0,1000),receipts:input.receipts.slice(0,1000)};
+ return {version:1,shopping:input.shopping.slice(0,1000),pantry:input.pantry.slice(0,1000),events:input.events.slice(0,1000),chores:input.chores.slice(0,1000),receipts:input.receipts.slice(0,1000),meals:Array.isArray(input.meals)?input.meals.slice(0,1000):[]};
 }
 function load(){
  try{const raw=localStorage.getItem(KEY);return raw?safeState(JSON.parse(raw)):defaultState()}
@@ -143,14 +144,16 @@ function itemRow(x){
 }
 function pantryPage(){
  const filtered=state.pantry.filter(x=>ui.stockFilter==='all'||x.owner===ui.stockFilter||ui.stockFilter==='low'&&(x.status==='low'||x.status==='empty'));
- return pageIntro('🥫 KÜHLSCHRANK-MANAGEMENT','WAS IST NOCH DA?','Ihr seid die lebende Inventur. Wenn was leer ist, direkt auf den Einkaufszettel damit.',button('start-quiz','🚀 Rundgang starten','pink')+button('open-stock','➕ Produkt anlegen'))+
+ return pageIntro('🥫 KÜHLSCHRANK-MANAGEMENT','WAS IST NOCH DA?','Ihr seid die lebende Inventur. Wenn was leer ist, direkt auf den Einkaufszettel damit.',button('start-quiz','🚀 Rundgang starten','pink')+button('open-meal','🍳 Essen verbuchen','blue')+button('open-stock','➕ Produkt anlegen'))+
  `<div class="notice"><span>🧠</span><div><strong>Keine Zauberei:</strong> Die App weiß nur, was ihr eintragt. Status und Mengen könnt ihr jederzeit aktualisieren. Beim Einkauf wandern abgehakte Sachen automatisch ins Vorratsregal.</div></div>
  <section class="section"><div class="tabs">${[['all','🥫 Alles'],['low','🚨 Fast leer'],['shared','🤝 WG'],['ben','🥩 Ben'],['adrian','🎨 Adrian']].map(([id,label])=>'<button class="tab '+(ui.stockFilter===id?'active':'')+'" data-action="stock-filter" data-value="'+id+'">'+label+'</button>').join('')}</div>
  <div class="category-grid">${filtered.length?filtered.map(x=>{
  const statusLabel={good:'✅ Genug da',low:'⚠️ Wenig',empty:'❌ Leer',unknown:'❔ Ungeprüft'}[x.status]||'❔ Ungeprüft';
  return '<div class="category-card"><div class="em">'+esc(x.emoji||stockEmoji(x.name))+'</div><div class="content"><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><strong>'+esc(x.name)+'</strong>'+ownerTag(x.owner)+'</div><small>'+statusLabel+' · '+(Number(x.count)||0)+' Einheit(en)</small><div class="status-buttons"><button class="'+(x.status==='good'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="good">👍 Genug</button><button class="'+(x.status==='low'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="low">😬 Wenig</button><button class="'+(x.status==='empty'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="empty">🚨 Leer</button><button data-action="consume" data-id="'+attr(x.id)+'" title="Eine Einheit verbraucht">➖ 1</button><button data-action="add-unit" data-id="'+attr(x.id)+'" title="Eine Einheit ergänzt">➕ 1</button></div></div><button class="icon-btn" data-action="delete-stock" data-id="'+attr(x.id)+'" aria-label="Produkt entfernen">✕</button></div>';
  }).join(''):empty('🥫','Kein Produkt hier','Leg einfach ein neues an.')}</div></section>
- <section class="section meme-box"><span class="big">🍳</span><div><strong>Geplündert? Einmal auf „➖ 1“.</strong><div class="small">Bei null rutscht das Produkt automatisch auf den Einkaufszettel. Einfache Mengenführung für den Kühlschrank am Tablet.</div></div></section>`;
+ <section class="section meme-box"><span class="big">🍳</span><div><strong>Geplündert? Einmal auf „➖ 1“.</strong><div class="small">Bei null rutscht das Produkt automatisch auf den Einkaufszettel. Einfache Mengenführung für den Kühlschrank am Tablet.</div></div></section>
+ <section class="section card"><h2>🍳 Was haben wir weggeatmet?</h2><p class="muted small">Mahlzeiten und ihre verbrauchten Zutaten.</p>
+ ${state.meals.length?state.meals.slice(-5).reverse().map(m=>'<div class="summary-mini"><span class="emoji">🍽️</span><div style="flex:1"><b>'+esc(m.title)+'</b><small>'+dateLabel(m.date)+' · '+ownerName(m.owner)+' · '+(m.ingredients||[]).map(x=>esc(x)).join(', ')+'</small></div></div>').join(''):empty('🍝','Noch nichts verputzt','Tragt euer nächstes Essen mit den Zutaten ein.')}</section>`;
 }
 function eventEmoji(t){return ({work:'💼',party:'🍻',event:'🎉',appointment:'📍',misc:'📌'})[t]||'📌'}
 function eventRow(x,withDelete=true){
@@ -241,6 +244,15 @@ function openStock(){
  <div class="field"><label>Menge / Einheiten</label><input name="count" type="number" min="0" max="999" step="1" value="0"></div>
  <div class="field full"><label>Status</label><select name="status"><option value="unknown">❔ Noch ungeprüft</option><option value="good">👍 Genug da</option><option value="low">😬 Wenig</option><option value="empty">🚨 Leer</option></select></div></div>
  <div class="btn-row"><button class="btn" type="submit">➕ PRODUKT ANLEGEN</button></div></form>`);
+}
+function openMeal(){
+ if(!state.pantry.length){toast('🥫 Legt erst ein paar Vorräte an.');return}
+ modalOpen(modalHead('🍳 MAMPF-MANAGER','WAS GAB’S ZU FUTTERN?','Wählt die Zutaten aus. Pro ausgewählter Zutat wird eine Einheit abgezogen.')+
+ `<form data-form="add-meal"><div class="form-grid">
+ <div class="field full"><label>Wie heißt das Meisterwerk?</label><input name="title" placeholder="z.B. Nudeln mit ganz viel Käse 🧀" maxlength="100" required></div>
+ <div class="field full"><label>Wer hat gekocht / gegessen?</label><select name="owner"><option value="shared">🤝 Beide</option><option value="ben">🥩 Ben</option><option value="adrian">🎨 Adrian</option></select></div>
+ <div class="field full"><label>Welche Zutaten wurden verbraucht?</label><div class="meal-options">${state.pantry.map(x=>'<label class="meal-option"><input type="checkbox" name="ingredient" value="'+attr(x.id)+'"><span>'+esc(x.emoji||stockEmoji(x.name))+' '+esc(x.name)+'</span><small>'+Number(x.count||0)+' da</small></label>').join('')}</div></div></div>
+ <div class="btn-row"><button type="submit" class="btn">🍽️ VERPUTZT, EINTRAGEN!</button></div></form>`);
 }
 function openChore(){
  modalOpen(modalHead('🧹 PUTZCLUB','NEUER PUTZJOB','Saubermachen, bevor die WG eine eigene Lebensform entwickelt.')+
@@ -355,6 +367,7 @@ function handleAction(action,el){
  if(action==='backup'){openBackup();return}
  if(action==='open-event'){openEvent();return}
  if(action==='open-stock'){openStock();return}
+ if(action==='open-meal'){openMeal();return}
  if(action==='open-chore'){openChore();return}
  if(action==='open-receipt'){openReceipt(false);return}
  if(action==='start-quiz'){startQuiz();return}
@@ -405,6 +418,22 @@ document.body.addEventListener('submit',e=>{
   const name=String(data.name||'').trim();if(!name)return;
   if(addShopping(name,String(data.qty||'1x').trim(),data.owner)){save();render();toast('🛒 '+name+' steht auf dem Zettel!')}
   else toast('🧐 Steht schon auf dem Zettel.');return;
+ }
+ if(type==='add-meal'){
+  const title=String(data.title||'').trim();
+  const ids=new FormData(form).getAll('ingredient');
+  if(!title||!ids.length){toast('🍽️ Bitte ein Essen und mindestens eine Zutat wählen.');return}
+  const names=[];
+  for(const id of ids){
+   const x=state.pantry.find(x=>x.id===id);if(!x)continue;
+   names.push(x.name);x.count=Math.max(0,(Number(x.count)||0)-1);x.updated=dayISO();
+   if(x.count===0){setStockStatus(x,'empty')}
+   else if(x.count===1){setStockStatus(x,'low')}
+   else{x.status='good'}
+  }
+  state.meals.push({id:uid(),title,owner:data.owner||'shared',date:dayISO(),ingredients:names});
+  state.meals=state.meals.slice(-500);
+  save();closeModal();render();toast('🍝 Mahlzeit eingetragen. Guten Hunger!');return;
  }
  if(type==='add-stock'){
   const name=String(data.name||'').trim();if(!name)return;

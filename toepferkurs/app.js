@@ -32,7 +32,51 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function attr(v){return esc(v)}
 function ownerName(v){return v==='ben'?'Ben':v==='adrian'?'Adrian':'Gemeinsam'}
 function ownerTag(v){return '<span class="chip '+(v==='ben'?'ben':v==='adrian'?'adrian':'both')+'">'+(v==='ben'?'🥩 Ben':v==='adrian'?'🎨 Adrian':'🤝 Gemeinsam')+'</span>'}
-function stockEmoji(name){const n=String(name).toLowerCase();for(const [part,e] of [['kack','🧻'],['papier','🧻'],['gurk','🥒'],['fleisch','🥩'],['steak','🥩'],['hack','🥩'],['hähn','🍗'],['wurst','🌭'],['milch','🥛'],['butter','🧈'],['kaffee','☕'],['eier','🥚'],['ei','🥚'],['nudel','🍝'],['brot','🍞'],['käse','🧀'],['spül','🧽'],['müll','🗑️'],['bier','🍺'],['wasser','💧'],['cola','🥤'],['salat','🥗'],['tomat','🍅'],['reis','🍚'],['kartoffel','🥔'],['apfel','🍎']]){if(n.includes(part))return e}return '🛍️'}
+function stockEmoji(name){
+ const n=String(name||'').normalize('NFKC').toLocaleLowerCase('de-DE');
+ const known=[
+  [/pizza|pizza.?kit|pizzateig|flammkuchen/,'🍕'],
+  [/avocado|avokado/,'🥑'],
+  [/zwiebel|schalotte/,'🧅'],
+  [/traub/,'🍇'],
+  [/karott|möhre|moehre|möhr|moehr/,'🥕'],
+  [/nüss|nuss|nuesse|nues|erdnuss|mandel|pistazi|cashew|haselnuss|walnuss|pekannuss|macadamia|studentenfutter/,'🥜'],
+  [/quark|skyr|topfen/,'🥣'],
+  [/joghurt|yoghurt|yogurt|jogurt|gür\b/,'🥣'],
+  [/erdbeer/,'🍓'],
+  [/gurk|^gur\b/,'🥒'],
+  [/bier|pils|weizenbier|lagerbier|helles\b|radler/,'🍺']
+ ];
+ for(const [matcher,emoji] of known){if(matcher.test(n))return emoji}
+ const general=[['kack','🧻'],['papier','🧻'],['fleisch','🥩'],['steak','🥩'],['hack','🥩'],['hähn','🍗'],['wurst','🌭'],['milch','🥛'],['butter','🧈'],['kaffee','☕'],['eier','🥚'],['nudel','🍝'],['brot','🍞'],['käse','🧀'],['spül','🧽'],['müll','🗑️'],['wasser','💧'],['cola','🥤'],['salat','🥗'],['tomat','🍅'],['reis','🍚'],['kartoffel','🥔'],['apfel','🍎']];
+ for(const [part,emoji] of general){if(n.includes(part))return emoji}
+ if(/(^|\s)ei($|\s)/.test(n))return '🥚';
+ return '🛍️';
+}
+// For foods without a fitting Unicode emoji, draw a native SVG cup.
+function productIcon(name,savedEmoji=''){
+ const n=String(name||'').toLocaleLowerCase('de-DE');
+ const quark=/quark|skyr|topfen/.test(n);
+ const yoghurt=/joghurt|yoghurt|yogurt|jogurt|gür\b/.test(n);
+ if(quark||yoghurt){
+  const pink=yoghurt,initial=quark?'Q':'J';
+  return '<svg class="product-icon" viewBox="0 0 64 64" role="img" aria-label="'+(quark?'Quarkbecher':'Joghurtbecher')+'" xmlns="http://www.w3.org/2000/svg">'+
+  '<ellipse cx="32" cy="13" rx="24" ry="8" fill="'+(pink?'#ffb4cf':'#b8e6fb')+'" stroke="#171a26" stroke-width="3"/>'+
+  '<path d="M10 14L17 52Q32 61 47 52L54 14Z" fill="'+(pink?'#fff0f4':'#f2fbff')+'" stroke="#171a26" stroke-width="3" stroke-linejoin="round"/>'+
+  '<path d="M15 27Q32 21 49 27L47 48Q32 55 17 48Z" fill="'+(pink?'#ee7fa4':'#79c9ef')+'"/>'+
+  '<text x="32" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="21" fill="#171a26">'+initial+'</text>'+
+  '<path d="M7 11Q32 0 57 11" stroke="#171a26" stroke-width="3" stroke-linecap="round" fill="none"/></svg>';
+ }
+ const mapped=stockEmoji(name);
+ return esc(mapped==='🛍️'&&savedEmoji?savedEmoji:mapped);
+}
+function isBeerItem(x){return !!(x&&String(x.name||'').trim().toLocaleLowerCase('de-DE')==='bier'&&x.owner==='shared')}
+function ensureMandatoryBeer(){
+ if(!state||!Array.isArray(state.shopping))return;
+ const present=state.shopping.find(x=>isBeerItem(x)&&!x.done);
+ if(present){present.mandatory=true;present.emoji='🍺';return}
+ state.shopping.unshift({id:uid(),name:'Bier',qty:'1x',owner:'shared',emoji:'🍺',mandatory:true,done:false,created:dayISO()});
+}
 function meat(name){return /fleisch|steak|rind|schwein|hack|hähn|huhn|pute|schnitzel|speck|bacon|salami|wurst|schinken|frikadelle|leberkäs|bratwurst/i.test(name)}
 function safeState(input){
  if(!input||!Array.isArray(input.shopping)||!Array.isArray(input.pantry)||!Array.isArray(input.events)||!Array.isArray(input.chores)||!Array.isArray(input.receipts))throw Error('Keine gültige Töpferkurs-Sicherung');
@@ -43,12 +87,14 @@ function load(){
  catch(e){console.warn('Speicher nicht verfügbar:',e);return defaultState()}
 }
 let state=load();
+ensureMandatoryBeer();
 let ui={page:'home',shopTab:'all',quiz:-1,quizAdded:0,month:new Date().getMonth(),year:new Date().getFullYear(),chosenDate:dayISO(),stockFilter:'all',modal:'',receiptText:''};
 const main=document.getElementById('main');
 const modal=document.getElementById('modal');
 const toastEl=document.getElementById('toast');
 let toastTimer;
 function save(){
+ ensureMandatoryBeer();
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('⚠️ Speicher voll oder blockiert. Bitte Backup exportieren.');console.error(e)}
  updateNav();
 }
@@ -60,7 +106,7 @@ function updateNav(){
  document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.page===ui.page));
 }
 function navigate(page){ui.page=page;closeModal();render();window.scrollTo({top:0,behavior:'smooth'})}
-function render(){updateNav();main.innerHTML=({home:homePage,shopping:shoppingPage,pantry:pantryPage,calendar:calendarPage,chores:choresPage,money:moneyPage}[ui.page]||homePage)()}
+function render(){ensureMandatoryBeer();updateNav();main.innerHTML=({home:homePage,shopping:shoppingPage,pantry:pantryPage,calendar:calendarPage,chores:choresPage,money:moneyPage}[ui.page]||homePage)()}
 function empty(emoji,title,subtitle){return '<div class="empty"><div class="empty-emoji">'+emoji+'</div><strong>'+title+'</strong><div>'+subtitle+'</div></div>'}
 function pageIntro(kicker,title,subtitle,buttons=''){return '<div class="page-intro"><div><div class="eyebrow">'+kicker+'</div><h1>'+title+'</h1><p>'+subtitle+'</p></div>'+(buttons?'<div class="page-actions">'+buttons+'</div>':'')+'</div>'}
 function button(action,label,kind='secondary',other=''){return '<button class="btn '+kind+'" data-action="'+action+'" '+other+'>'+label+'</button>'}
@@ -91,7 +137,7 @@ return `<svg viewBox="0 0 400 285" xmlns="http://www.w3.org/2000/svg" aria-label
 </svg>`;
 }
 function homePage(){
- const pending=state.shopping.filter(x=>!x.done);
+ const pending=state.shopping.filter(x=>!x.done).sort((a,b)=>Number(isBeerItem(b))-Number(isBeerItem(a)));
  const low=state.pantry.filter(x=>x.status==='low'||x.status==='empty');
  const upcoming=state.events.filter(x=>x.date>=dayISO()).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).slice(0,4);
  const month=dayISO().slice(0,7),spent=state.receipts.filter(x=>(x.date||'').startsWith(month)).reduce((n,x)=>n+(Number(x.total)||0),0);
@@ -113,13 +159,13 @@ function homePage(){
  <div class="card"><div class="card-head"><div><h2>📅 Was geht ab?</h2><p class="muted small">Die nächsten Termine und Eskalationen</p></div><button class="icon-btn" data-page="calendar" aria-label="Kalender öffnen">↗</button></div>
  ${upcoming.length?upcoming.map(x=>eventRow(x,false)).join(''):empty('🦗','Noch nix los','Tragt Arbeit, Termine oder die nächste Sause ein.')}</div>
  <div class="card"><div class="card-head"><div><h2>📦 Das fehlt noch</h2><p class="muted small">Euer virtueller Kühlschrankzettel</p></div><button class="icon-btn" data-page="shopping" aria-label="Einkaufsliste öffnen">↗</button></div>
- ${pending.length?pending.slice(0,5).map(x=>'<div class="summary-mini"><span class="emoji">'+esc(x.emoji||stockEmoji(x.name))+'</span><div style="flex:1"><b>'+esc(x.name)+'</b><small>'+esc(x.qty||'1x')+' · '+ownerName(x.owner)+'</small></div><button class="icon-btn" data-action="toggle-shopping" data-id="'+attr(x.id)+'" aria-label="Abhaken">✓</button></div>').join(''):empty('🥳','Liste ist leer','Du kannst jetzt offiziell die Couch heiraten.')}
+ ${pending.length?pending.slice(0,5).map(x=>'<div class="summary-mini"><span class="emoji">'+productIcon(x.name,x.emoji)+'</span><div style="flex:1"><b>'+esc(x.name)+'</b><small>'+esc(x.qty||'1x')+' · '+ownerName(x.owner)+'</small></div><button class="icon-btn" data-action="toggle-shopping" data-id="'+attr(x.id)+'" aria-label="Abhaken">✓</button></div>').join(''):empty('🥳','Liste ist leer','Du kannst jetzt offiziell die Couch heiraten.')}
  ${pending.length>5?'<p class="muted small">+ '+(pending.length-5)+' weitere auf der Liste</p>':''}
  </div></section>
  <section class="section meme-box"><span class="big">🤝</span><div><strong>Ben + Adrian = eine großartige Idee.</strong><div class="small">Keine Paartherapie, nur praktische WG-Organisation. Das Chaos ist inklusive. 🏺</div></div></section>`;
 }
 function shoppingPage(){
- const pending=state.shopping.filter(x=>!x.done);
+ const pending=state.shopping.filter(x=>!x.done).sort((a,b)=>Number(isBeerItem(b))-Number(isBeerItem(a)));
  const bought=state.shopping.filter(x=>x.done);
  const filtered=pending.filter(x=>ui.shopTab==='all'||x.owner===ui.shopTab);
  return pageIntro('🥒 EINKAUFEN ODER VERHUNGERN','DER FRESSZETTEL.','Alles, was fehlt. Getrennt nach WG-Kram und Benns höchstpersönlichem Fleischimperium.',button('start-quiz','🧻 Vorrats-Check','pink')+button('finish-shop','✅ Einkauf abschließen','secondary'))+
@@ -140,7 +186,8 @@ function shoppingPage(){
  <div class="list">${bought.length?bought.map(itemRow).join(''):empty('🛍️','Noch nichts abgehakt','Hakt eure gekauften Sachen oben ab.')}</div></section>`;
 }
 function itemRow(x){
- return '<div class="list-row '+(x.done?'checked':'')+'"><button class="check-btn" data-action="toggle-shopping" data-id="'+attr(x.id)+'" aria-label="'+(x.done?'Zurück auf die Liste':'Abhaken')+'">'+(x.done?'✓':'')+'</button><span class="list-icon">'+esc(x.emoji||stockEmoji(x.name))+'</span><div class="list-main"><div class="item-name">'+esc(x.name)+'</div><div class="item-sub">'+esc(x.qty||'1x')+'</div></div><div class="list-right">'+ownerTag(x.owner)+'<button class="icon-btn" data-action="delete-shopping" data-id="'+attr(x.id)+'" aria-label="Löschen">🗑</button></div></div>'
+ const beer=isBeerItem(x)&&!x.done;
+ return '<div class="list-row '+(x.done?'checked':'')+(beer?' mandatory-beer':'')+'"><button class="check-btn" data-action="toggle-shopping" data-id="'+attr(x.id)+'" aria-label="'+(x.done?'Zurück auf die Liste':'Abhaken')+'">'+(x.done?'✓':'')+'</button><span class="list-icon">'+productIcon(x.name,x.emoji)+'</span><div class="list-main"><div class="item-name">'+esc(x.name)+'</div><div class="item-sub">'+esc(x.qty||'1x')+(beer?' · 🍻 DAUERAUFTRAG':'')+'</div></div><div class="list-right">'+ownerTag(x.owner)+(beer?'<span class="chip beer-badge">🍺 PFLICHT</span>':'<button class="icon-btn" data-action="delete-shopping" data-id="'+attr(x.id)+'" aria-label="Löschen">🗑</button>')+'</div></div>';
 }
 function pantryPage(){
  const filtered=state.pantry.filter(x=>ui.stockFilter==='all'||x.owner===ui.stockFilter||ui.stockFilter==='low'&&(x.status==='low'||x.status==='empty'));
@@ -149,7 +196,7 @@ function pantryPage(){
  <section class="section"><div class="tabs">${[['all','🥫 Alles'],['low','🚨 Fast leer'],['shared','🤝 WG'],['ben','🥩 Ben'],['adrian','🎨 Adrian']].map(([id,label])=>'<button class="tab '+(ui.stockFilter===id?'active':'')+'" data-action="stock-filter" data-value="'+id+'">'+label+'</button>').join('')}</div>
  <div class="category-grid">${filtered.length?filtered.map(x=>{
  const statusLabel={good:'✅ Genug da',low:'⚠️ Wenig',empty:'❌ Leer',unknown:'❔ Ungeprüft'}[x.status]||'❔ Ungeprüft';
- return '<div class="category-card"><div class="em">'+esc(x.emoji||stockEmoji(x.name))+'</div><div class="content"><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><strong>'+esc(x.name)+'</strong>'+ownerTag(x.owner)+'</div><small>'+statusLabel+' · '+(Number(x.count)||0)+' Einheit(en)</small><div class="status-buttons"><button class="'+(x.status==='good'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="good">👍 Genug</button><button class="'+(x.status==='low'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="low">😬 Wenig</button><button class="'+(x.status==='empty'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="empty">🚨 Leer</button><button data-action="consume" data-id="'+attr(x.id)+'" title="Eine Einheit verbraucht">➖ 1</button><button data-action="add-unit" data-id="'+attr(x.id)+'" title="Eine Einheit ergänzt">➕ 1</button></div></div><button class="icon-btn" data-action="delete-stock" data-id="'+attr(x.id)+'" aria-label="Produkt entfernen">✕</button></div>';
+ return '<div class="category-card"><div class="em">'+productIcon(x.name,x.emoji)+'</div><div class="content"><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><strong>'+esc(x.name)+'</strong>'+ownerTag(x.owner)+'</div><small>'+statusLabel+' · '+(Number(x.count)||0)+' Einheit(en)</small><div class="status-buttons"><button class="'+(x.status==='good'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="good">👍 Genug</button><button class="'+(x.status==='low'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="low">😬 Wenig</button><button class="'+(x.status==='empty'?'selected':'')+'" data-action="stock-status" data-id="'+attr(x.id)+'" data-value="empty">🚨 Leer</button><button data-action="consume" data-id="'+attr(x.id)+'" title="Eine Einheit verbraucht">➖ 1</button><button data-action="add-unit" data-id="'+attr(x.id)+'" title="Eine Einheit ergänzt">➕ 1</button></div></div><button class="icon-btn" data-action="delete-stock" data-id="'+attr(x.id)+'" aria-label="Produkt entfernen">✕</button></div>';
  }).join(''):empty('🥫','Kein Produkt hier','Leg einfach ein neues an.')}</div></section>
  <section class="section meme-box"><span class="big">🍳</span><div><strong>Geplündert? Einmal auf „➖ 1“.</strong><div class="small">Bei null rutscht das Produkt automatisch auf den Einkaufszettel. Einfache Mengenführung für den Kühlschrank am Tablet.</div></div></section>
  <section class="section card"><h2>🍳 Was haben wir weggeatmet?</h2><p class="muted small">Mahlzeiten und ihre verbrauchten Zutaten.</p>
@@ -251,7 +298,7 @@ function openMeal(){
  `<form data-form="add-meal"><div class="form-grid">
  <div class="field full"><label>Wie heißt das Meisterwerk?</label><input name="title" placeholder="z.B. Nudeln mit ganz viel Käse 🧀" maxlength="100" required></div>
  <div class="field full"><label>Wer hat gekocht / gegessen?</label><select name="owner"><option value="shared">🤝 Beide</option><option value="ben">🥩 Ben</option><option value="adrian">🎨 Adrian</option></select></div>
- <div class="field full"><label>Welche Zutaten wurden verbraucht?</label><div class="meal-options">${state.pantry.map(x=>'<label class="meal-option"><input type="checkbox" name="ingredient" value="'+attr(x.id)+'"><span>'+esc(x.emoji||stockEmoji(x.name))+' '+esc(x.name)+'</span><small>'+Number(x.count||0)+' da</small></label>').join('')}</div></div></div>
+ <div class="field full"><label>Welche Zutaten wurden verbraucht?</label><div class="meal-options">${state.pantry.map(x=>'<label class="meal-option"><input type="checkbox" name="ingredient" value="'+attr(x.id)+'"><span>'+productIcon(x.name,x.emoji)+' '+esc(x.name)+'</span><small>'+Number(x.count||0)+' da</small></label>').join('')}</div></div></div>
  <div class="btn-row"><button type="submit" class="btn">🍽️ VERPUTZT, EINTRAGEN!</button></div></form>`);
 }
 function openChore(){
@@ -318,7 +365,7 @@ function renderQuiz(){
   return;
  }
  const x=state.pantry[ui.quiz];
- modalOpen('<div class="question-number">VORRATS-CHECK · FRAGE '+(ui.quiz+1)+' / '+total+'</div><div class="meter"><div class="progress"><span style="width:'+Math.round(ui.quiz/total*100)+'%"></span></div></div><span class="question-icon">'+esc(x.emoji||stockEmoji(x.name))+'</span><h2 class="question-title" id="modal-title">Ist noch genug<br><span class="highlight">'+esc(x.name)+'</span> da?</h2><p>'+ownerTag(x.owner)+'</p><div class="step-actions"><button data-action="quiz-answer" data-value="yes">✅ JO, REICHT!</button><button data-action="quiz-answer" data-value="no">🚨 NÖ, FEHLT!</button><button class="skip" data-action="quiz-answer" data-value="skip">🤷 Keine Ahnung, nächste Frage</button></div>');
+ modalOpen('<div class="question-number">VORRATS-CHECK · FRAGE '+(ui.quiz+1)+' / '+total+'</div><div class="meter"><div class="progress"><span style="width:'+Math.round(ui.quiz/total*100)+'%"></span></div></div><span class="question-icon">'+productIcon(x.name,x.emoji)+'</span><h2 class="question-title" id="modal-title">Ist noch genug<br><span class="highlight">'+esc(x.name)+'</span> da?</h2><p>'+ownerTag(x.owner)+'</p><div class="step-actions"><button data-action="quiz-answer" data-value="yes">✅ JO, REICHT!</button><button data-action="quiz-answer" data-value="no">🚨 NÖ, FEHLT!</button><button class="skip" data-action="quiz-answer" data-value="skip">🤷 Keine Ahnung, nächste Frage</button></div>');
 }
 function quizAnswer(answer){
  const x=state.pantry[ui.quiz];if(!x)return;
@@ -380,7 +427,7 @@ function handleAction(action,el){
  if(action==='stock-filter'){ui.stockFilter=val;render();return}
  if(action==='finish-shop'){if(!state.shopping.some(x=>x.done)){toast('🛒 Erst gekaufte Produkte abhaken!');return}openReceipt(true);return}
  if(action==='toggle-shopping'){const x=state.shopping.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}return}
- if(action==='delete-shopping'){state.shopping=state.shopping.filter(x=>x.id!==id);save();render();return}
+ if(action==='delete-shopping'){const x=state.shopping.find(x=>x.id===id);if(x&&isBeerItem(x)&&!x.done){toast('🍺 Bier bleibt. Ohne Bier keine WG!');return}state.shopping=state.shopping.filter(x=>x.id!==id);save();render();return}
  if(action==='stock-status'){const x=state.pantry.find(x=>x.id===id);if(x){setStockStatus(x,val);save();render();toast(val==='good'?'👍 Bestens, ist noch da!':'🛒 Bei Bedarf auf dem Einkaufszettel!')}return}
  if(action==='add-unit'){const x=state.pantry.find(x=>x.id===id);if(!x)return;x.count=(Number(x.count)||0)+1;x.status='good';x.updated=dayISO();save();render();toast('📦 Eine Einheit ergänzt!');return}
  if(action==='consume'){

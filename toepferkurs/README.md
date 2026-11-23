@@ -7,6 +7,8 @@ Eigenständige, mobiloptimierte WG-Zentrale in `toepferkurs/`. Kein React-Build,
 ## Funktionen (Version 1)
 
 - 🛒 Einkaufszettel mit gemeinsamen, Ben- und Adrian-Artikeln; Fleisch wird standardmäßig Ben zugeordnet
+- 🍺 **Bier ist immer auf der Einkaufsliste**: abgehaktes Bier wird als gekauft markiert, für den nächsten Einkauf erscheint sofort ein neuer Pflichtposten
+- 🥑 Produkticons für Nüsse, Avocado, Zwiebeln, Pizza(-Kit), Trauben, Karotten, Gurken, Erdbeeren; eigenes SVG-Joghurt-/Quarkbecher-Piktogramm
 - 🧻 Interaktiver Vorrats-Check („Ist noch genug Kackpappe da?“)
 - 🥫 Vorratsübersicht, Bestandsänderungen, automatischer Einkaufszettel bei niedrigem Bestand
 - 🍳 Mahlzeiten mit Zutatenverbrauch und Verlauf

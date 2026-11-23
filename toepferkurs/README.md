@@ -13,7 +13,7 @@ Eigenständige, mobiloptimierte WG-Zentrale in `toepferkurs/`. Kein React-Build,
 - 🥫 Vorratsübersicht, Bestandsänderungen, automatischer Einkaufszettel bei niedrigem Bestand
 - 🍳 Mahlzeiten mit Zutatenverbrauch und Verlauf
 - 🗓️ Monatskalender für Arbeitszeiten, Termine, Parties und Events
-- 🧽 Wiederkehrender Putzplan mit rotierender Zuständigkeit und Erledigt-Historie
+- 🧽 Wiederkehrender Putzplan mit rotierender Zuständigkeit und Erledigt-Historie; 17 vorbelegte Tätigkeiten inklusive Staubsaugen, Boden wischen, Dusche entkalken, Kühlschrank reinigen, Spiegel putzen und Pfand wegbringen. Eigene SVG-Icons für Staubsauger und Wischmopp, weitere Vorschläge als Schnellvorlagen. Bestehende Nutzerdaten und Putz-Historien bleiben bei der einmaligen Erweiterung erhalten.
 - 🧾 Einkaufshistorie mit Kosten, Zahler, 50/50-Aufteilung und individuellen Extra-Beträgen
 - 📷 Belegfoto mit optionaler **browserinterner** experimenteller TextDetector-Erkennung; bei Nichtunterstützung manuelle Eingabe
 - 💾 JSON-Datenexport und -import

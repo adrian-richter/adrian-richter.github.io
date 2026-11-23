@@ -472,3 +472,4 @@ document.body.addEventListener('change',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.classList.contains('hidden'))closeModal()});
 window.addEventListener('storage',e=>{if(e.key===KEY){state=load();render();toast('🔄 Daten in anderem Tab geändert.')}});
 render();
+if(typeof navigator!=='undefined'&&'serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Offline-Modus nicht verfügbar:',err))}

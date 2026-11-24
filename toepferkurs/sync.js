@@ -54,8 +54,21 @@ function wgSaveBase(){
  }catch(err){console.warn('WG-Synchronisierungsstand konnte nicht gemerkt werden',err)}
 }
 function wgBackupBeforeSwitch(){
- try{localStorage.setItem(WG_PRE_SYNC_BACKUP,JSON.stringify({time:new Date().toISOString(),state:wgClone(state)}))}
- catch(err){console.warn('Lokaler Zustand konnte nicht zusätzlich gesichert werden',err)}
+ try{
+  localStorage.setItem(WG_PRE_SYNC_BACKUP,JSON.stringify({time:new Date().toISOString(),state:wgClone(state)}));
+  return true;
+ }catch(err){console.warn('Lokaler Zustand konnte nicht zusätzlich gesichert werden',err);return false}
+}
+function wgDownloadOldLocal(){
+ const backup=wgLoadJson(WG_PRE_SYNC_BACKUP);
+ if(!backup||!backup.state){toast('💾 Es gibt noch keinen gespeicherten früheren Gerätestand.');return}
+ const data=new Blob([JSON.stringify(backup.state,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(data);
+ const link=document.createElement('a');
+ link.href=url;link.download='toepferkurs-alter-geraetestand.json';
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ toast('💾 Der alte lokale Stand wurde als Backup exportiert.');
 }
 function wgStageStatus(next,err=''){wgSync.status=next;wgSync.lastError=err;wgBanner()}
 
@@ -168,7 +181,7 @@ function wgJoin(mode){
  if(!candidate||!candidate.response.state)return;
  const {cfg,response}=candidate;
  const next=mode==='merge'?wgMergeInitial(state,response.state):response.state;
- wgBackupBeforeSwitch();
+ if(!wgBackupBeforeSwitch()){toast('⚠️ Lokaler Sicherheitsstand konnte nicht gesichert werden. Bitte erst ein JSON-Backup exportieren.');return}
  wgRememberConnected(cfg,response);
  wgApplyState(next);
  wgSync.candidate=null;closeModal();
@@ -290,7 +303,8 @@ function openSyncSettings(){
   modalOpen(modalHead('🌐 WG-SYNCHRONISIERUNG','EINE WG. EIN DATENBESTAND.','Ben, Adrian und das Kühlschrank-Tablet können denselben Datenbestand verwenden.')+
   '<div class="notice"><span>🌐</span><div><strong>'+ (wgSync.status==='online'?'Verbunden':wgSync.status==='pending'?'Änderungen werden übertragen':'Verbindung vorübergehend gestört')+'</strong><div class="small">Stand: Revision '+wgSync.revision+' · Server: '+esc(wgSync.cfg.url)+'</div></div></div>'+
   '<div class="btn-row"><button class="btn" data-action="sync-now">🔄 Jetzt synchronisieren</button><button class="btn danger" data-action="sync-disconnect">🔌 Verbindung trennen</button></div>'+
-  '<p class="small muted" style="margin-top:16px">Der WG-Zugangscode wird auf diesem Gerät gespeichert. Bitte nur auf euren eigenen Geräten einrichten.</p>');
+  '<p class="small muted" style="margin-top:16px">Der WG-Zugangscode wird auf diesem Gerät gespeichert. Bitte nur auf euren eigenen Geräten einrichten.</p>'+ 
+  (wgLoadJson(WG_PRE_SYNC_BACKUP)?'<button class="btn ghost tiny" data-action="sync-old-backup">💾 Vorherigen lokalen Stand herunterladen</button>':''));
   return;
  }
  const saved=wgLoadJson(WG_SYNC_SETTINGS)||wgSync.cfg||{};
@@ -308,6 +322,7 @@ function wgHandleButton(action){
  if(action==='sync-merge'){wgJoin('merge');return true}
  if(action==='sync-now'){wgSync.pending?wgFlush():wgPull();toast('🔄 WG-Daten werden geprüft.');return true}
  if(action==='sync-disconnect'){wgDisconnect();return true}
+ if(action==='sync-old-backup'){wgDownloadOldLocal();return true}
  return false;
 }
 document.body.addEventListener('click',e=>{

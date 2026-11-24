@@ -19,11 +19,25 @@ Eigenständige, mobiloptimierte WG-Zentrale in `toepferkurs/`. Kein React-Build,
 - 💾 JSON-Datenexport und -import
 - 📱 Progressive Web App: manifest + Service Worker für optionalen Offlinezugriff
 
-## Wichtige Einschränkung: Noch keine gemeinsame Datenbank
+## 🌐 Gemeinsamer WG-Speicher (Backend vorbereitet)
 
-Version 1 speichert Inhalte **ausschließlich im localStorage des jeweiligen Browsers**. Daten von Ben und Adrian synchronisieren sich **nicht automatisch** zwischen Smartphones, Tablets oder Computern. Die JSON-Backup-Funktion erlaubt manuellen Datentransfer, überschreibt aber beim Import den gesamten aktuellen Datenbestand. Lokale Daten können durch Löschen von Browserdaten verloren gehen; regelmäßig exportieren.
+Die Website unterstützt jetzt **optional** einen zentralen Datenbestand. Der Client ist in `sync.js` integriert und der eigene Server in [backend/README.md](backend/README.md) dokumentiert.
 
-**Für Version 2:** Eigener abgesicherter API-Server (etwa PHP mit MySQL/SQLite auf vorhandenem Webhosting oder Node mit SQLite/PostgreSQL auf eigenem Server), Benutzerkonten für beide Mitbewohner, Authentifizierung, Autorisierung, serverseitige Validierung, HTTPS, Datenbank-Backups und datensparsame Belegverarbeitung. Eine GitHub-Pages-Seite alleine kann keine gemeinsam beschreibbare Datenbank bereitstellen.
+**Stand der Bereitstellung:** Die API ist auf GitHub **nur als Quellcode vorbereitet**. Solange sie nicht auf einem echten PHP-Server mit privatem Code und SQLite-Datei eingerichtet wurde, speichert die Website weiterhin **ausschließlich im lokalen Browser**. Das Statusbanner zeigt den Zustand an. **Es gibt aktuell noch keine bestätigte Live-Synchronisierung.**
+
+### Einrichtung und Migration
+
+1. Die private PHP-/SQLite-API auf bestehendem HTTPS-Webhosting bereitstellen, siehe [backend/README.md](backend/README.md).
+2. Am **PC mit den bisherigen Einträgen** die Website öffnen. Über `💾 → WG-Synchronisierung` API-Adresse und gemeinsamen Zugangscode eingeben.
+3. Wenn der Server noch leer ist, die PC-Daten **einmalig hochladen**.
+4. Auf Handy und Bens Gerät dieselbe API-Adresse und denselben WG-Code verwenden. `WG-Stand übernehmen` auswählen, oder bei zwei bereits gepflegten Geräten die Stände zusammenführen.
+5. Das Banner muss `🌐 WG-Daten verbunden` zeigen. Bei Serverausfällen wird lokal weitergearbeitet und später synchronisiert.
+
+Die App speichert einen bestätigten Server-Versionsstand, führt Änderungen anhand stabiler IDs zusammen und verhindert mit SQLite-Transaktionen, dass ältere Daten unbemerkt neuere Serverdaten überschreiben. Beim ersten Beitritt wird ein Backup des vorherigen lokalen Standes gespeichert und kann heruntergeladen werden.
+
+### Sicherheit
+
+Es gibt einen **gemeinsamen WG-Zugangscode**, keine einzelnen Nutzerkonten. Er wird nach Verbindung auf den Geräten lokal gespeichert; Daten selbst liegen zentral hinter der passwortgeschützten API. Der Server-Codeschlüssel darf **nicht im öffentlichen GitHub-Repository** stehen. Ohne Server ist weiterhin ein lokales JSON-Backup sinnvoll.
 
 ## Belege
 
@@ -33,7 +47,9 @@ Belegfotos werden aktuell nicht gespeichert oder extern hochgeladen. Die OCR nut
 
 - `index.html` – Seitenlayout
 - `style.css` – responsive Styles
-- `app.js` – Geschäftslogik und Speicher
+- `app.js` – Geschäftslogik und lokaler Speicher
+- `sync.js` – optionale gemeinsame Synchronisierung, Konfliktbehandlung und Migration
+- `backend/` – selbst gehostete PHP-API mit privater SQLite-Datenbank
 - `manifest.webmanifest`, `icon.svg`, `sw.js` – PWA
 
-Alle Daten sind in `localStorage['toepferkurs.wg.v1']` gespeichert. GitHub Pages liefert nur statische Dateien aus. Kein Buildprozess nötig.
+Ohne aktivierte Serververbindung bleiben Daten in `localStorage['toepferkurs.wg.v1']`. Mit Serververbindung sind sie zentral gespeichert und werden zusätzlich lokal gespiegelt. GitHub Pages liefert weiterhin nur statische Dateien aus.

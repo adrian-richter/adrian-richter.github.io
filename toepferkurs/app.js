@@ -138,6 +138,7 @@ function save(){
  ensureMandatoryBeer();
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('⚠️ Speicher voll oder blockiert. Bitte Backup exportieren.');console.error(e)}
  updateNav();
+ if(typeof syncLocalSave==='function')syncLocalSave();
 }
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2800)}
 function updateNav(){
@@ -436,15 +437,17 @@ function openReceipt(fromCheckout=false){
  <div class="btn-row"><button class="btn" type="submit">💸 EINKAUF SPEICHERN</button><button type="button" class="btn ghost" data-action="close-modal">Abbrechen</button></div></form>`);
 }
 function openBackup(){
- modalOpen(modalHead('💾 DATEN SICHERN','WG-ÜBERLEBENSKIT','Diese erste Version speichert Daten nur auf deinem Gerät. Mit Export und Import könnt ihr Daten manuell übertragen.')+
- `<div class="notice"><span>⚠️</span><div><strong>Keine Live-Synchronisierung:</strong> Eintrag auf Adrians Handy erscheint noch nicht automatisch bei Ben. Für echte gemeinsame Daten braucht es später ein Backend mit Zugangsschutz.</div></div>
- <div class="btn-row">${button('export-backup','⬇️ JSON-Backup','secondary')}${button('import-backup','⬆️ Backup importieren','pink')}</div>
- <p class="small muted" style="margin-top:19px">Ein Backup enthält Einkaufsliste, Vorräte, Mahlzeiten, Termine, Putzplan und Ausgaben. Import ersetzt die vorhandenen Daten auf diesem Gerät. Bitte vertraulich behandeln.</p>`);
+ const connected=typeof syncIsConnected==='function'&&syncIsConnected();
+ modalOpen(modalHead('💾 DATEN & WG-SPEICHER','WG-ÜBERLEBENSKIT','Damit eure Einträge auch auf dem Handy, bei Ben und am Kühlschrank auftauchen.')+
+ (connected?'<div class="notice"><span>🌐</span><div><strong>WG-Datenbank verbunden:</strong> Änderungen werden auf eurem gemeinsamen Server gespeichert. Ein zusätzliches JSON-Backup ist trotzdem sinnvoll.</div></div>':
+ '<div class="notice"><span>📱</span><div><strong>Aktuell nur lokal:</strong> Auf diesem Gerät gespeicherte Einträge erscheinen nicht automatisch auf anderen Geräten. Mit einem privaten Server können wir das ändern.</div></div>')+
+ '<div class="btn-row">'+button('sync-settings','🌐 WG-Synchronisierung','blue')+button('export-backup','⬇️ JSON-Backup','secondary')+button('import-backup','⬆️ Backup importieren','pink')+'</div>'+
+ '<p class="small muted" style="margin-top:19px">Ein Backup enthält Einkaufsliste, Vorräte, Mahlzeiten, Termine, Putzplan und Ausgaben. Import ist nur im lokalen Modus möglich, damit keine gemeinsamen WG-Einträge unabsichtlich überschrieben werden.</p>');
 }
 function openAbout(){
  modalOpen(modalHead('🏺 ÜBER UNSERE WG-ZENTRALE','TÖPFERKURS.','Ben + Adrian · Töpferstraße · Schleswig')+
  `<p>🥒 Einkaufszettel · 🥩 Fleisch-Extra für Ben · 🧻 Vorrats-Quiz · 🗓️ Termine & Arbeit · 🧹 Putzrotation · 💸 Kassenzettel & Ausgleich.</p>
- <div class="notice"><span>🔒</span><div><strong>Aktuell ein lokaler Prototyp:</strong> Die Website ist über einen Link erreichbar. Eure Einträge bleiben aber im Speicher des jeweiligen Browsers. Kein Login, kein gemeinsamer Server und keine automatische Synchronisierung. Deshalb hier noch keine sensiblen Daten eintragen, solange wir keinen geschützten Zugang gebaut haben.</div></div>
+ <div class="notice"><span>🔒</span><div><strong>Gemeinsamer Speicher optional:</strong> Die Website funktioniert zunächst lokal. Über „WG-Synchronisierung“ könnt ihr eure eigene private Datenbank verbinden. Erst wenn dort „WG-Daten verbunden“ steht, werden die Einträge geräteübergreifend synchronisiert. Deshalb hier noch keine sensiblen Daten eintragen, solange wir keinen geschützten Zugang gebaut haben.</div></div>
  <p class="small muted" style="margin-top:16px">Gebaut ohne externe App-Plattform, Tracking-Dienste und externe OCR-Dienstleister. Ein Kassenzettelfoto wird nicht hochgeladen; automatische Erkennung gibt es experimentell nur bei Browser-Unterstützung.</p>
  ${button('backup','💾 Backup öffnen','secondary')}`);
 }
@@ -521,6 +524,7 @@ function handleAction(action,el){
  if(action==='close-modal'){closeModal();return}
  if(action==='about'){openAbout();return}
  if(action==='backup'){openBackup();return}
+ if(action==='sync-settings'){if(typeof openSyncSettings==='function')openSyncSettings();return}
  if(action==='open-event'){openEvent();return}
  if(action==='open-stock'){openStock();return}
  if(action==='open-meal'){openMeal();return}
@@ -630,6 +634,7 @@ document.body.addEventListener('submit',e=>{
 });
 document.getElementById('import-file').addEventListener('change',async e=>{
  const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+ if(typeof syncIsConnected==='function'&&syncIsConnected()){toast('🔒 Bitte vor einem vollständigen Backup-Import die WG-Verbindung trennen.');return}
  if(f.size>10*1024*1024){toast('❌ Backup ist zu groß.');return}
  try{
   const incoming=safeState(JSON.parse(await f.text()));

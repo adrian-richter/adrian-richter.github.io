@@ -48,3 +48,21 @@ html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--in
  .chore-ideas{grid-template-columns:1fr}
  .chore-illustration .chore-icon{width:30px;height:30px}
 }
+
+/* Der Sync-Zustand muss auf jedem Gerät klar erkennbar sein. */
+.sync-banner{display:flex;align-items:center;gap:13px;flex-wrap:wrap;border:2px solid var(--ink);border-radius:15px;background:#fff3ce;color:var(--ink);padding:11px 15px;margin:0 0 16px;box-shadow:2px 2px 0 var(--ink)}
+.sync-banner.sync-online{background:#e3f9b1}
+.sync-banner.sync-pending,.sync-banner.sync-busy{background:#dceeff}
+.sync-banner.sync-offline,.sync-banner.sync-error{background:#ffe0e5}
+.sync-symbol{font-size:1.5rem;line-height:1;flex-shrink:0}
+.sync-text{flex:1;min-width:190px;display:flex;flex-direction:column}
+.sync-text strong{font-size:.84rem;font-weight:1000;letter-spacing:-.01em}
+.sync-text small{font-size:.74rem;color:#414c58;line-height:1.35}
+.sync-banner .btn{flex-shrink:0}
+.sync-connect-form{margin-top:16px}
+@media(max-width:580px){
+ .sync-banner{padding:10px 12px;gap:9px;margin-top:0}
+ .sync-symbol{font-size:1.3rem}
+ .sync-text{min-width:140px}
+ .sync-banner .btn{width:100%;min-height:35px}
+}
